@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Ecommerce Tienda de Vinilos - Maria Jose Malaver</title>
+  <meta name="description" content="Tienda de vinilos - carrito, filtrado por categoría, persistencia y PayPal sandbox." />
+
+  <style>
+    :root{
+      /* Paleta: azul claro + gris */
+      --bg: #f3f7fb;           /* fondo claro */
+      --panel: #e9f2fb;        /* paneles suaves */
+      --card: #ffffff;         /* tarjetas */
+      --text: #0b2545;         /* texto principal (azul oscuro) */
+      --muted: #556b86;        /* texto secundario */
+      --accent: #6fb3ff;      /* azul claro */
+      --accent-2: #8fc9ff;    /* azul más suave */
+      --border: #d3e6fb;      /* bordes suaves */
+      --ok: #198754;          /* acciones positivas */
+      --warn: #d9534f;        /* eliminar / vaciar */
+      --info: #0d6efd;        /* finalizar / pago */
+      --shadow: 0 6px 18px rgba(11,37,69,0.06);
+      --radius: 10px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+      margin:0; padding:20px; background:var(--bg); color:var(--text);
+      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+    }
+
+    header{background:linear-gradient(180deg,var(--panel),#ffffff); padding:18px; border-radius:12px; box-shadow:var(--shadow); display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+    header h1{margin:0;font-size:20px;color:var(--text)}
+    header p{margin:0;color:var(--muted)}
+
+    .filtros{margin-left:auto}
+    label{font-size:14px;color:var(--muted);margin-right:8px}
+    select{padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text)}
+
+    main{display:grid;grid-template-columns:1fr 360px;gap:18px;margin-top:18px}
+
+    /* Productos */
+    #productos{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+    .producto{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:var(--shadow)}
+    .producto img{width:100%;height:200px;object-fit:cover;border-radius:8px;background:#f0f6ff}
+    .producto h3{font-size:15px;margin:10px 0 6px;color:var(--text)}
+    .producto p{margin:0;color:var(--muted);font-size:14px}
+    .card-actions{display:flex;gap:8px;align-items:center;margin-top:12px}
+    .button{flex:1;background:linear-gradient(180deg,var(--accent),var(--accent-2));border:none;color:white;padding:10px;border-radius:8px;cursor:pointer;font-weight:600}
+
+    /* Carrito */
+    .carrito{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;box-shadow:var(--shadow)}
+    .carrito h2{margin:0 0 8px;color:var(--text)}
+    #lista-carrito{list-style:none;padding:0;margin:8px 0 12px;max-height:360px;overflow:auto}
+    #lista-carrito li{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--panel);margin-bottom:8px}
+    .qty{display:flex;align-items:center;gap:6px}
+    .qty button{background:transparent;border:1px solid var(--border);padding:6px 8px;border-radius:6px;cursor:pointer}
+    .remove{background:var(--warn);color:#fff;border:none;border-radius:6px;padding:6px 8px;cursor:pointer}
+
+    .totales p{margin:6px 0;color:var(--muted)}
+    .totales .total{font-size:18px;color:var(--text);font-weight:700}
+
+    .acciones{display:flex;gap:10px;margin-top:10px}
+    .vaciar{background:var(--warn);color:#fff;border:none;padding:10px 12px;border-radius:8px;cursor:pointer}
+    .finalizar{background:var(--info);color:#fff;border:none;padding:10px 12px;border-radius:8px;cursor:pointer}
+
+    .pago{margin-top:14px;padding:12px;border-radius:8px;border:1px dashed var(--border);background:linear-gradient(180deg,#fafcff,var(--panel))}
+    .hint{font-size:13px;color:var(--muted)}
+
+    /* Responsive */
+    @media (max-width:980px){
+      main{grid-template-columns:1fr;}
+      .filtros{width:100%;margin-top:8px}
+    }
+  </style>
+</head>
+<body>
+  <header role="banner">
+    <div>
+      <h1>Ecommerce Tienda de Vinilos - Maria Jose Malaver</h1>
+      <p>Explora nuestra selección de vinilos — Calidad y sonido analógico.</p>
+    </div>
+
+    <div class="filtros" role="region" aria-label="Filtros">
+      <label for="categoria">Filtrar por categoría:</label>
+      <select id="categoria" name="categoria" aria-label="Filtrar por categoría">
+        <option value="todos">Todos</option>
+        <option value="R&B">R&B</option>
+        <option value="Alternativo">Alternativo</option>
+        <option value="Hip-Hop">Hip-Hop</option>
+      </select>
+    </div>
+  </header>
+
+  <main id="main" tabindex="-1">
+    <section id="productos" aria-live="polite" aria-busy="false"></section>
+
+    <aside class="carrito" aria-label="Carrito de compras">
+      <h2>🧾 Carrito de Compras</h2>
+      <p><strong>Productos en carrito: <span id="cantidad-carrito">0</span></strong></p>
+      <ul id="lista-carrito"></ul>
+
+      <div class="totales">
+        <p>Subtotal: <strong id="subtotal-text">$0.00</strong></p>
+        <p>Descuento: <strong id="descuento-text">$0.00</strong></p>
+        <p>Impuestos: <strong id="impuestos-text">$0.00</strong></p>
+        <p class="total">Total: <strong id="total-text">$0.00</strong></p>
+      </div>
+
+      <div class="acciones">
+        <button id="btn-vaciar" class="vaciar" type="button">🧼 Vaciar</button>
+        <button id="btn-finalizar" class="finalizar" type="button">✅ Finalizar</button>
+      </div>
+
+      <div class="pago">
+        <h3>💳 Método de pago</h3>
+        <div id="paypal-button-container" style="margin-top:10px; display:none;"></div>
+        <p class="hint">⚠️ Para pruebas: PayPal sandbox está activado (client-id = <code>sb</code> en este ejemplo).</p>
+      </div>
+    </aside>
+  </main>
+
+  <!-- PayPal SDK (sandbox client-id 'sb' por defecto) -->
+  <script src="https://www.paypal.com/sdk/js?client-id=sb&currency=USD&components=buttons,funding-eligibility"></script>
+
+  <script>
+    /* =========================
+       CONFIG
+       ========================= */
+    const MONEDA   = 'USD';      // Cambia si prefieres 'COP'
+    const LOCALE   = 'en-US';
+    const TAX_RATE = 0.00;       // 0.19 si aplica IVA
+    const DESCUENTO = 0.00;     // descuento fijo (puedes manejar cupones después)
+
+    /* =========================
+       DATASET (se mantuvieron TODAS las imágenes y rutas originales)
+       Añadí categoría a cada producto según tu pedido: R&B, Alternativo, Hip-Hop
+       No modifiqué las URLs ni atributos de imagen que proporcionaste.
+       ========================= */
+    const productos = [
+      {
+        id: 1,
+        nombre: "hard to imagine the neighbourhood ever changing by The Neighbourhood",
+        precio: 25.00,
+        categoria: "Alternativo",
+        img: "https://m.media-amazon.com/images/I/61O0dZji5IL._UF894,1000_QL80_.jpg"
+      },
+      {
+        id: 2,
+        nombre: "Blonded by Frank Ocean",
+        precio: 18.00,
+        categoria: "R&B",
+        img: "https://blonded.co/cdn/shop/products/29_blonde-02-b.jpg?v=1671293064"
+      },
+      {
+        id: 3,
+        nombre: "Views by Drake",
+        precio: 30.00,
+        categoria: "Hip-Hop",
+        img: "https://thesoundofvinyl.com.au/cdn/shop/products/Drake-Views-2LP.png?v=1665522116"
+      },
+      {
+        id: 4,
+        nombre: "Channel Orange by Frank Ocean",
+        precio: 18.00,
+        categoria: "R&B",
+        img: "https://blonded.co/cdn/shop/files/channel-orange_blonded_3.jpg?v=1750929486&width=3840"
+      },
+      {
+        id: 5,
+        nombre: "Long.Live.A$AP by A$AP Rocky",
+        precio: 22.00,
+        categoria: "Hip-Hop",
+        img: "https://st.jetsetrecords.net/product/thumbnail/9/2/7/9270404df0518c96929235ae8bf82bb7/large.jpg"
+      }
+    ];
+
+    /* =========================
+       ESTADO + SELECTORES
+       ========================= */
+    let carrito = new Map();
+
+    const el = {
+      contProds: document.getElementById('productos'),
+      lista:     document.getElementById('lista-carrito'),
+      subtotal:  document.getElementById('subtotal-text'),
+      impuestos: document.getElementById('impuestos-text'),
+      descuento: document.getElementById('descuento-text'),
+      total:     document.getElementById('total-text'),
+      cantidad:  document.getElementById('cantidad-carrito'),
+      select:    document.getElementById('categoria'),
+      btnVaciar: document.getElementById('btn-vaciar'),
+      btnFinal:  document.getElementById('btn-finalizar'),
+      paypal:    document.getElementById('paypal-button-container')
+    };
+
+    const money = new Intl.NumberFormat(LOCALE, { style: 'currency', currency: MONEDA });
+
+    /* =========================
+       RENDER DE PRODUCTOS
+       ========================= */
+    function renderProductos(lista){
+      el.contProds.setAttribute('aria-busy','true');
+      el.contProds.innerHTML = '';
+
+      if (!Array.isArray(lista) || lista.length === 0){
+        el.contProds.innerHTML = '<p class="hint">No hay productos para mostrar en esta categoría.</p>';
+        el.contProds.setAttribute('aria-busy','false');
+        return;
+      }
+
+      lista.forEach(p=>{
+        const card = document.createElement('article');
+        card.className = 'producto';
+        card.innerHTML = `\n          <img src="${p.img}" alt="${p.nombre}">\n          <div>\n            <h3>${p.nombre}</h3>\n            <p>${p.categoria} · ${money.format(Number(p.precio)||0)}</p>\n          </div>\n          <div class="card-actions">\n            <button class="button" data-add="${p.id}">Agregar</button>\n          </div>\n        `;
+
+        // fallback imagen
+        const img = card.querySelector('img');
+        img.addEventListener('error', ()=>{
+          // mantenemos la propiedad src original, pero reemplazamos solo si falla
+          img.src = 'https://via.placeholder.com/400x600?text=Imagen+no+disponible';
+          img.alt = p.nombre + ' (imagen no disponible)';
+        });
+
+        el.contProds.appendChild(card);
+      });
+      el.contProds.setAttribute('aria-busy','false');
+    }
+
+    /* =========================
+       FILTRO POR CATEGORÍA
+       ========================= */
+    function filtrar(){
+      const sel = el.select.value;
+      const data = sel === 'todos' ? productos : productos.filter(p => String(p.categoria) === sel);
+      renderProductos(data);
+      localStorage.setItem('filtro_categoria', sel);
+    }
+
+    function cargarFiltro(){
+      const f = localStorage.getItem('filtro_categoria');
+      if (f) el.select.value = f;
+    }
+
+    /* =========================
+       CARRITO + TOTALES (Map) 
+       ========================= */
+    function persist(){ localStorage.setItem('carrito_vinilos', JSON.stringify(Array.from(carrito.entries()))); }
+    function load(){
+      const data = localStorage.getItem('carrito_vinilos');
+      if (data){ carrito = new Map(JSON.parse(data)); }
+    }
+
+    function totales(){
+      const subtotal = [...carrito.values()].reduce((a,i)=> a + Number(i.precio||0)*Number(i.cantidad||0), 0);
+      const desc = Math.min(DESCUENTO, subtotal);
+      const base = subtotal - desc;
+      const impuestos = +(base * TAX_RATE).toFixed(2);
+      const total = +(base + impuestos).toFixed(2);
+      const cantidad = [...carrito.values()].reduce((a,i)=> a + Number(i.cantidad||0), 0);
+      return { subtotal, descuento: desc, impuestos, total, cantidad };
+    }
+
+    function pintarCarrito(){
+      el.lista.innerHTML = '';
+      carrito.forEach(it=>{
+        const li = document.createElement('li');
+        li.innerHTML = `\n          <span style="flex:1">${it.nombre} — ${money.format(it.precio)} \n            <div style="font-size:12px;color:var(--muted)">(${it.categoria})</div>\n          </span>\n          <div class="qty">\n            <button aria-label="Disminuir" data-dec="${it.id}">−</button>\n            <span>${it.cantidad}</span>\n            <button aria-label="Aumentar" data-inc="${it.id}">+</button>\n            <button class="remove" aria-label="Eliminar" data-del="${it.id}">❌</button>\n          </div>\n        `;
+        el.lista.appendChild(li);
+      });
+
+      const {subtotal,descuento,impuestos,total,cantidad} = totales();
+      el.subtotal.textContent  = money.format(subtotal);
+      el.descuento.textContent = money.format(descuento);
+      el.impuestos.textContent = money.format(impuestos);
+      el.total.textContent     = money.format(total);
+      el.cantidad.textContent  = cantidad;
+
+      el.paypal.style.display = total > 0 ? 'block' : 'none';
+      renderPayPal(total);
+    }
+
+    function add(id){
+      const p = productos.find(x=> x.id === id);
+      if(!p) return alert('Producto no encontrado.');
+      const it = carrito.get(id);
+      if (it) it.cantidad++; else carrito.set(id, {...p, cantidad:1});
+      persist(); pintarCarrito();
+    }
+    function dec(id){
+      const it = carrito.get(id); if(!it) return;
+      it.cantidad--; if (it.cantidad<=0) carrito.delete(id);
+      persist(); pintarCarrito();
+    }
+    function del(id){ carrito.delete(id); persist(); pintarCarrito(); }
+
+    /* =========================
+       PAYPAL (sandbox)
+       ========================= */
+    let paypalRenderedTotal = null;
+    function renderPayPal(total){
+      if(!window.paypal) return;
+      if(total <= 0){ paypalRenderedTotal=null; el.paypal.innerHTML=''; return; }
+      if(paypalRenderedTotal === total && el.paypal.childElementCount > 0) return;
+
+      paypalRenderedTotal = total;
+      el.paypal.innerHTML = '';
+      paypal.Buttons({
+        style:{layout:'vertical'},
+        createOrder:(data,actions)=>actions.order.create({
+          purchase_units:[{ amount:{ value: total.toFixed(2), currency_code: MONEDA } }]
+        }),
+        onApprove:(data,actions)=>actions.order.capture().then(d=>{
+          alert(`¡Gracias ${d?.payer?.name?.given_name || 'cliente'}! Pago aprobado.`);
+          carrito.clear(); persist(); pintarCarrito();
+        }),
+        onError:(err)=>{ console.error(err); alert('Error con el pago. Reintenta.'); }
+      }).render('#paypal-button-container');
+    }
+
+    /* =========================
+       EVENTOS (delegados)
+       ========================= */
+    document.addEventListener('click', e=>{
+      const addBtn=e.target.closest('[data-add]'); if(addBtn) add(+addBtn.dataset.add);
+      const incBtn=e.target.closest('[data-inc]'); if(incBtn) add(+incBtn.dataset.inc);
+      const decBtn=e.target.closest('[data-dec]'); if(decBtn) dec(+decBtn.dataset.dec);
+      const delBtn=e.target.closest('[data-del]'); if(delBtn) del(+delBtn.dataset.del);
+    });
+
+    el.select.addEventListener('change', filtrar);
+
+    el.btnVaciar.addEventListener('click', ()=>{ if(confirm('¿Vaciar carrito?')){ carrito.clear(); persist(); pintarCarrito(); }});
+    el.btnFinal.addEventListener('click', ()=>{
+      if(carrito.size===0) return alert('Carrito vacío. Agrega productos.');
+      alert('Pedido confirmado (simulado). Gracias por comprar.'); carrito.clear(); persist(); pintarCarrito();
+    });
+
+    /* =========================
+       INIT
+       ========================= */
+    (function init(){
+      cargarFiltro();
+      renderProductos(productos);
+      load();
+      pintarCarrito();
+      document.getElementById('main')?.focus({preventScroll:true});
+    })();
+  </script>
+</body>
+</html>
